@@ -277,6 +277,10 @@
 
   /* KPI row — 2 large split cards */
   .kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  /* 클라우드/서비스 실적현황처럼 kpi-row 안에 카드가 하나뿐인 경우 — 2열 그리드 규칙 때문에 카드가
+     페이지 절반 폭에 갇혀, 그 안의 KPI 3열(3col)/보조 지표들이 실제보다 훨씬 좁은 폭에서 겹쳐 보이는
+     원인이 되고 있었습니다. 카드 폭을 전체로 넓혀 근본적으로 여유 공간을 확보합니다. */
+  .kpi-row.kpi-row-single { grid-template-columns: 1fr; }
   .kpi-card-lg { border-top: 4px solid var(--brand); padding: 10px 18px 8px; }
   .kpi-card-lg.accent-gold { border-top-color: var(--gold); background: var(--brand-soft); }
 
@@ -297,8 +301,22 @@
   .kpi-metrics.kpi-metrics-1 { grid-template-columns: 1fr; }
   /* 서비스 실적 KPI 카드 — 영업이익 삭제 위치에 Professional/Managed Service 매출을 2단으로 나란히 배치.
      .kpi-metrics의 1180px 이하 그리드-템플릿 1열(세로 스택) 규칙이 클래스 특이성 때문에 이 카드에도 적용돼
-     노트북 폭(예: 1280~1366px 창)에서 세로로 쌓이던 문제가 있어, 항상 가로 2열을 유지하도록 명시적으로 고정합니다. */
+     노트북 폭(예: 1280~1366px 창)에서 세로로 쌓이던 문제가 있어, 항상 가로 2열을 유지하도록 명시적으로 고정합니다.
+     (레거시 — 현재는 아래 .kpi-3col-container 3열 구조로 대체되었지만 다른 곳에서 재사용할 수 있어 유지) */
   .kpi-metrics.kpi-metrics-sub { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-strong); grid-template-columns: 1fr 1fr !important; column-gap: 16px; }
+
+  /* 서비스 누적 매출 / Professional Service 매출 / Managed Service 매출 3개를 한 줄(1행 3열)에 동등하게
+     배치. 카드 폭 전체를 3등분하고 사이에 세로 구분선을 둡니다. 안쪽 값 칸에 이미 .kpi-col 클래스가
+     쓰이고 있어(2024/2025/2026 등 각 값 셀), 바깥 3분할 래퍼는 이름이 겹치지 않도록 .kpi-3col-item으로
+     구분했습니다. .kpi-metrics처럼 1180px 이하에서 세로로 쌓이지 않도록 항상 3열을 고정합니다. */
+  .kpi-3col-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; width: 100%; align-items: stretch; }
+  .kpi-3col-item { min-width: 0; }
+  .kpi-3col-item:not(:last-child) { border-right: 1px solid var(--border-strong); padding-right: 16px; }
+  @media (max-width: 640px) {
+    /* 아주 좁은 화면에서만 3열이 비좁아지므로 세로 스택으로 전환 */
+    .kpi-3col-container { grid-template-columns: 1fr; row-gap: 14px; }
+    .kpi-3col-item:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border-strong); padding-right: 0; padding-bottom: 14px; }
+  }
   /* Professional/Managed Service처럼 카드 절반 폭에 5개 값(3개년+YoY 2개)을 넣을 때는 3열로 줄바꿈해
      압축 배치(1~3번째 열: 2024/2025/2026, 다음 줄 1~2번째 열: YoY 2개)하여 절대 겹치지 않도록 함 */
   .kpi-cols-5y-compact { grid-template-columns: 1fr 1fr 1fr; row-gap: 8px; column-gap: 4px; }
@@ -306,6 +324,33 @@
   .kpi-metric-compact .kpi-col-label { font-size: 10.5px; }
   .kpi-metric-compact .kpi-col-value { font-size: 13.5px; }
   .kpi-metric-compact .kpi-chip { font-size: 9.6px; padding: 3px 6px; }
+
+  /* narrow 변형(3열 배치용) — 이전의 stacked(세로 나열) 대신, 클라우드 실적 KPI 카드와 동일하게
+     2024/2025/2026/YoY(24→25)/YoY(25→26) 값을 가로 한 줄로 배치합니다. 카드 폭이 3등분되어 좁아진 만큼
+     글자 크기와 간격만 압축해, 겹치지 않으면서도 가로 1줄 배치를 유지합니다. */
+  /* .kpi-cols와 2개 클래스를 함께 걸어(.kpi-cols.kpi-cols-5y-narrow) 명시도를 높입니다 — 그렇지 않으면
+     아래쪽에 나오는 @media(max-width:1180px)/@media(max-width:900px)의 ".kpi-cols{...}" 반응형 규칙이
+     소스 순서상 나중에 나와 동일 명시도에서 이 규칙을 덮어써, 노트북/태블릿 폭에서 다시 3열로 줄바꿈되는
+     문제가 있었습니다. */
+  .kpi-cols.kpi-cols-5y-narrow { grid-template-columns: repeat(5, 1fr); column-gap: 4px; row-gap: 6px; }
+  .kpi-cols-5y-narrow .kpi-col-label { font-size: 9.6px; margin-bottom: 2px; }
+  .kpi-cols-5y-narrow .kpi-col-value { font-size: 12px; }
+  .kpi-cols-5y-narrow .kpi-chip { font-size: 9.4px; padding: 2px 5px; gap: 1px; }
+  .kpi-cols-5y-narrow .kpi-chip-lbl { font-size: 8.6px; }
+  .kpi-cols-5y-narrow .kpi-delta-body { gap: 2px; }
+  /* 아래쪽 @media(max-width:900px) 블록의 ".kpi-col-delta{grid-column:1/-1}"(다른 카드용, YoY 칸을 전체
+     폭 한 줄로 늘어뜨림) 규칙이 이 변형에도 새어 들어와, YoY(24→25)/YoY(25→26)만 세로로 늘어지고
+     2024~2026년 값만 3칸에 눌려 찌그러지는 문제가 있었습니다. 명시도를 높여 항상 원래 그리드 칸을
+     유지하도록 고정합니다. */
+  .kpi-cols.kpi-cols-5y-narrow .kpi-col-delta { grid-column: auto; }
+  /* 3분할 카드 내부에서는 라벨("Professional Service 매출" 등)이 길어 nowrap이면 잘리므로 줄바꿈 허용 */
+  .kpi-3col-item .kpi-metric-head { white-space: normal; line-height: 1.3; font-size: 11.5px; }
+  /* 641~768px 구간(3분할 컨테이너가 아직 3열이지만 카드 폭이 가장 좁아지는 구간)에서만 5열 대신 3열로
+     줄바꿈합니다. 640px 이하에서는 .kpi-3col-container 자체가 세로 스택으로 전환되어 카드가 전체 폭을
+     다시 확보하므로 5열 가로 배치를 그대로 유지합니다. */
+  @media (min-width: 641px) and (max-width: 768px) {
+    .kpi-cols.kpi-cols-5y-narrow { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
+  }
   .kpi-col { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .kpi-col-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; white-space: normal; word-break: keep-all; line-height: 1.2; letter-spacing: 0.01em; text-align: center; }
   .kpi-col-value { display: block; font-variant-numeric: tabular-nums; letter-spacing: 0; white-space: nowrap; line-height: 1.15; font-size: 16px; font-weight: 700; text-align: center; }
@@ -601,6 +646,39 @@
   .seg-trend-title-l1 { font-size: 12px; font-weight: 700; color: var(--text-secondary); line-height: 1.3; }
   .seg-trend-title-l2 { font-size: 10.3px; font-weight: 500; color: var(--text-muted); line-height: 1.3; word-break: keep-all; }
 
+  /* 거래처 상세 영역 전체 스크롤 컨테이너 — 연도 선택/타이틀/가로 스크롤바/표를 모두 같은 하나의
+     스크롤 조상 안에 두어, 아래 세 블록이 position:sticky(top+left)로 위아래·좌우 스크롤 모두에
+     고정될 수 있도록 합니다(중첩된 별도 스크롤 박스를 쓰면 CSS의 overflow-x/y 연동 규칙 때문에
+     sticky 기준 조상이 엉뚱하게 바뀌는 문제가 있어, 이전 가로 전용 스크롤바 방식 대신 단일 컨테이너로
+     통합했습니다). 세로 스크롤은 그대로 보이되, 가로 스크롤은 아래 커스텀 스크롤바만 보이도록 네이티브
+     가로 스크롤바는 숨깁니다(세로는 유지). */
+  .seg-detail-scroll {
+    position: relative; overflow: auto; max-height: min(72vh, 760px);
+    border-top: 1px solid var(--border); border-radius: 0 0 14px 14px;
+  }
+  .seg-detail-scroll::-webkit-scrollbar:horizontal { height: 0; background: transparent; }
+  .seg-detail-scroll::-webkit-scrollbar:vertical { width: 10px; }
+  .seg-detail-scroll::-webkit-scrollbar-track { background: transparent; }
+  .seg-detail-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+  /* 연도 선택/타이틀/가로 스크롤바 3단 틀고정 블록 — top은 실측 높이 합으로 JS에서 지정, left:0으로
+     가로 스크롤 시에도 항상 화면 왼쪽에 붙어 있도록 합니다. 너비는 부모(스크롤 컨테이너)의 보이는
+     폭(뷰포트 폭)을 그대로 따르므로(표처럼 스크롤 콘텐츠 폭에 영향받지 않음) 항상 화면에 꽉 차게
+     보입니다. */
+  .seg-detail-sticky {
+    position: sticky; left: 0; z-index: 12; background: var(--brand-soft);
+    width: 100%;
+  }
+  .seg-detail-sticky-yearswitch { padding: 0 0 10px; }
+  .seg-detail-sticky-title { padding: 0 0 8px; }
+  /* 기본 OS 스크롤바는 옅은 색이라 흰 배경 위에서 거의 안 보이는 경우가 많아, 트랙/막대 색을 브랜드
+     색으로 직접 지정해 항상 뚜렷하게 보이고 조작하기 쉽도록 합니다. */
+  .seg-detail-sticky-scrollbar { height: 14px; overflow-x: auto; overflow-y: hidden; padding-bottom: 2px; scrollbar-width: thin; scrollbar-color: var(--brand) var(--border); }
+  .seg-detail-sticky-scrollbar::-webkit-scrollbar { height: 10px; }
+  .seg-detail-sticky-scrollbar::-webkit-scrollbar-track { background: var(--border); border-radius: 999px; }
+  .seg-detail-sticky-scrollbar::-webkit-scrollbar-thumb { background: var(--brand); border-radius: 999px; }
+  .seg-detail-sticky-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--brand-strong); }
+  .seg-detail-sticky-scrollbar .scroll-sync-spacer { height: 1px; }
+
   /* 거래처 상세현황 연도 선택기 — [ < ] 2026년 [ > ] */
   .seg-year-switch { display: flex; align-items: center; gap: 10px; }
   .seg-year-switch-btn {
@@ -620,30 +698,75 @@
   /* 거래처 YoY 요약 표 — 거래처명 + 2024/2025/2026 YTD + YoY(24→25)/YoY(25→26) 총 6개 열 */
   .seg-mini-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 820px; font-size: 12px; }
   .seg-mini-table th, .seg-mini-table td { text-align: right; padding: 8px 10px; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); vertical-align: middle; }
-  .seg-mini-table thead th { position: sticky; top: 0; z-index: 3; background: var(--brand); color: #fff; font-weight: 700; font-size: 11px; border-bottom: none; padding-top: 9px; padding-bottom: 9px; }
-  .seg-mini-table th:first-child, .seg-mini-table td:first-child { position: sticky; left: 0; z-index: 2; text-align: left; min-width: 170px; background: var(--surface); box-shadow: 1px 0 0 var(--border-strong); }
-  .seg-mini-table th:nth-child(5), .seg-mini-table td:nth-child(5),
-  .seg-mini-table th:nth-child(6), .seg-mini-table td:nth-child(6) { min-width: 108px; }
-  .seg-mini-table thead th:first-child { z-index: 4; background: var(--brand); }
-  .seg-mini-table tbody tr:hover td { background: var(--brand-soft); }
-  .seg-mini-table tbody tr:hover td:first-child { background: var(--brand-soft-2); }
-  .seg-mini-table td.empty-state:first-child { position: static; text-align: center; background: transparent; box-shadow: none; }
+  /* 메인 거래처 헤더는 더 이상 상단 틀고정(sticky)하지 않습니다 — 거래처 목록을 스크롤할 때 이 헤더가
+     화면을 가리는 대신, 거래처를 펼쳤을 때 나타나는 하단 상세표의 헤더가 틀고정되도록 역할을 넘겼습니다
+     (아래 .seg-product-table--detail thead th 참고). */
+  .seg-mini-table > thead > tr > th { background: var(--brand); color: #fff; font-weight: 700; font-size: 11px; border-bottom: none; padding-top: 9px; padding-bottom: 9px; }
+  /* 아래 nth-child 규칙들은 반드시 '바로 아래 자식(>)' 결합자로 범위를 좁혀야 합니다. 거래처 행을 펼치면
+     이 표(.seg-mini-table) 안쪽에 열 구성이 전혀 다른 중첩 표(ClientDetailPanel의 .seg-product-table--
+     detail, 구분+제품명+1~12월+YTD)가 DOM상 자손으로 들어오는데, 결합자 없이 쓰면 이 중첩 표의 같은
+     열 번호(예: 5·6번째 열 = 3월·4월)에도 min-width 등이 함께 새어 들어가 열 폭이 미세하게 어긋납니다. */
+  .seg-mini-table > tbody > tr > td:first-child, .seg-mini-table > thead > tr > th:first-child { position: sticky; left: 0; z-index: 2; text-align: left; min-width: 170px; background: var(--surface); box-shadow: 1px 0 0 var(--border-strong); }
+  .seg-mini-table > thead > tr > th:nth-child(5), .seg-mini-table > tbody > tr > td:nth-child(5),
+  .seg-mini-table > thead > tr > th:nth-child(6), .seg-mini-table > tbody > tr > td:nth-child(6) { min-width: 108px; }
+  .seg-mini-table > thead > tr > th:first-child { background: var(--brand); }
+  .seg-mini-table > tbody > tr:hover > td { background: var(--brand-soft); }
+  .seg-mini-table > tbody > tr:hover > td:first-child { background: var(--brand-soft-2); }
+  .seg-mini-table > tbody > tr > td.empty-state:first-child { position: static; text-align: center; background: transparent; box-shadow: none; }
 
-  /* 거래처 상세(구분+제품명별) 표 — 열이 15개라 P&L 세부표보다 좁게 잡아 트렌드 카드 레이아웃이 밀리지 않도록 함.
-     '구분' 열 min-width는 원래 76px였는데, 클라우드 구분(AWS/Azure 등)은 짧아 문제없었지만 서비스 구분값인
-     "PROFESSIONAL SERVICE"/"MANAGED SERVICE"는 훨씬 길어서 nowrap 텍스트가 폭을 넘어 옆의 '제품명' 열
-     위로 그대로 겹쳐 보이고, 그 뒤 월별 숫자 열까지 밀려 보이는 것처럼 깨지는 원인이었습니다(예: 고려해운
-     상세표에서 1월 칸이 하얗게 비어 보이던 현상). 가장 긴 라벨 기준으로 폭을 넉넉히 늘려 겹침을 없앱니다. */
-  .seg-product-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1060px; font-size: 11.5px; }
-  .seg-product-table th, .seg-product-table td { text-align: right; padding: 8px 9px; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  /* 거래처 상세(구분+제품명별) 표 — table-layout:fixed + 열별 고정 width로, 데이터 유무·숫자 자릿수·
+     구분값 길이와 무관하게 1월~12월/YTD 열 폭이 항상 일정하게 유지되고 thead·tbody 열 순서가 어긋날
+     일이 구조적으로 없어집니다. (이전에는 min-width만 지정해 "PROFESSIONAL SERVICE"처럼 긴 구분값이
+     폭을 넘어 옆 열 위로 겹쳐 보이던 문제 — 예: 고려해운 상세표의 1월 칸이 하얗게 비어 보이던 현상 — 의
+     원인이었던 지점) 폭을 넘는 텍스트는 말줄임(ellipsis) 처리합니다.
+     두 가지 실제 사용처가 열 구성이 달라(구분 열 유무) 폭 지정을 분리했습니다:
+       - .seg-product-table--detail (거래처 상세현황): 구분 + 제품명 + 1~12월 + YTD = 15열
+       - .seg-product-table--flat  (TOP30 모달 안에 펼쳐지는 거래처별 제품 내역): 제품명 + 1~12월 + YTD = 14열
+        (이 표는 이미 카드 클릭 시 구분값 하나로 좁혀진 상태라 '구분' 열 자체가 없습니다) */
+  .seg-product-table { border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 11.5px; }
+  .seg-product-table th, .seg-product-table td {
+    text-align: right; padding: 8px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); line-height: 1.4;
+  }
   .seg-product-table thead th { position: sticky; top: 0; z-index: 3; background: var(--brand); color: #fff; font-weight: 700; font-size: 10.3px; border-bottom: none; padding-top: 9px; padding-bottom: 9px; }
   .seg-product-table th:first-child, .seg-product-table td:first-child,
   .seg-product-table th:nth-child(2), .seg-product-table td:nth-child(2) { text-align: left; }
-  .seg-product-table th:first-child, .seg-product-table td:first-child { min-width: 156px; position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 1px 0 0 var(--border-strong); }
+  .seg-product-table th:first-child, .seg-product-table td:first-child {
+    position: sticky; left: 0; z-index: 2; background: var(--surface); box-shadow: 1px 0 0 var(--border-strong);
+  }
   .seg-product-table thead th:first-child { z-index: 4; background: var(--brand); }
-  .seg-product-table th:nth-child(2), .seg-product-table td:nth-child(2) { min-width: 170px; }
   .seg-product-table tbody tr:hover td { background: var(--brand-soft); }
   .seg-product-table tbody tr:hover td:first-child { background: var(--brand-soft-2); }
+
+  /* --detail: 1열 구분(PROFESSIONAL SERVICE/MANAGED SERVICE 등 가장 긴 라벨 기준) · 2열 제품명(220px 이상)
+     · 3~14열 1~12월(요청대로 65~70px대, 여유 있게 76px) · 15열 YTD 누적 */
+  .seg-product-table--detail { width: 1450px; }
+  /* 거래처 상세표 헤더 — 상세 영역 스크롤 시 상단에 틀고정됩니다. 위 .seg-mini-table thead th에서
+     제거한 sticky 역할을 이 표가 대신 맡으므로, 다른 sticky 레이어(좌측 고정열 등) 위로 항상 보이도록
+     z-index를 명시적으로 높여 둡니다. top 값은 고정 0이 아니라 --seg-thead-top 커스텀 속성을 씁니다 —
+     이 표 위에 연도 선택(년도 전환 버튼)·타이틀·가로 스크롤바가 함께 틀고정되어 쌓이므로, 그 실측
+     높이 합계만큼 아래로 오프셋을 주어야 서로 겹치지 않고 이어붙습니다(ClientDetailPanel에서 JS로 계산). */
+  .seg-product-table--detail thead th { position: sticky; top: var(--seg-thead-top, 0px); z-index: 10; }
+  .seg-product-table--detail thead th:first-child { z-index: 11; }
+  .seg-product-table--detail th:nth-child(1), .seg-product-table--detail td:nth-child(1) { width: 175px; }
+  .seg-product-table--detail th:nth-child(2), .seg-product-table--detail td:nth-child(2) { width: 240px; }
+  .seg-product-table--detail th:nth-child(n+3):nth-child(-n+14), .seg-product-table--detail td:nth-child(n+3):nth-child(-n+14) { width: 76px; }
+  .seg-product-table--detail th:nth-child(15), .seg-product-table--detail td:nth-child(15) { width: 110px; }
+
+  /* --flat: 1열 제품명(220px 이상) · 2~13열 1~12월(76px) · 14열 YTD 누적 */
+  .seg-product-table--flat { width: 1280px; }
+  .seg-product-table--flat th:nth-child(1), .seg-product-table--flat td:nth-child(1) { width: 240px; }
+  .seg-product-table--flat th:nth-child(n+2):nth-child(-n+13), .seg-product-table--flat td:nth-child(n+2):nth-child(-n+13) { width: 76px; }
+  .seg-product-table--flat th:nth-child(14), .seg-product-table--flat td:nth-child(14) { width: 110px; }
+
+  /* 상세표 상단 보조 가로 스크롤바 — 실제 표(.scroll-sync-bottom)와 scrollLeft를 서로 동기화합니다 */
+  .scroll-sync-top { overflow-x: auto; overflow-y: hidden; height: 14px; margin-bottom: 2px; }
+  .scroll-sync-top::-webkit-scrollbar { height: 10px; }
+  .scroll-sync-spacer { height: 1px; }
+  .scroll-sync-bottom { overflow: auto; }
+  /* TOP30 모달 안에 펼쳐지는 거래처별 제품 상세 — 제품 수가 많은 거래처도 모달이 과도하게 길어지지 않도록
+     세로 스크롤 상한을 둡니다(가로 스크롤은 위 .scroll-sync-bottom이 담당) */
+  .seg-product-table-flat-wrap { max-height: 320px; }
 
   /* TOP30 드릴다운 모달 */
   .modal-overlay {
@@ -670,20 +793,25 @@
   .modal-body { overflow: auto; flex: 1 1 auto; }
   .modal-table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 900px; font-size: 12px; }
   .modal-table th, .modal-table td { text-align: right; padding: 6px 10px; white-space: nowrap; font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border); }
-  .modal-table th:nth-child(1), .modal-table td:nth-child(1) { text-align: center; width: 44px; }
-  .modal-table th:nth-child(2), .modal-table td:nth-child(2) {
+  /* 아래 nth-child(1)/(2) 규칙들은 반드시 '바로 아래 자식(>)' 결합자로만 선택해야 합니다. 거래처 행을
+     펼치면 이 표(.modal-table) 안쪽에 완전히 다른 열 구성의 중첩 표(.seg-product-table--flat, 제품명+
+     1~12월+YTD)가 DOM상 자손으로 들어오는데, 결합자 없이 ".modal-table th:nth-child(2)"처럼 쓰면
+     후손 선택자라 이 중첩 표의 2번째 열(예: "1월" 헤더)까지 함께 걸려서 흰 배경에 흰 글씨로 텍스트가
+     보이지 않거나(거래처명/1월 헤더가 빈칸으로 보이던 원인) 폭이 엉뚱하게 바뀌는 문제가 있었습니다. */
+  .modal-table > thead > tr > th:nth-child(1), .modal-table > tbody > tr > td:nth-child(1) { text-align: center; width: 44px; }
+  .modal-table > thead > tr > th:nth-child(2), .modal-table > tbody > tr > td:nth-child(2) {
     text-align: left; position: sticky; left: 0; z-index: 1; background: var(--surface);
     box-shadow: 1px 0 0 var(--border-strong); min-width: 200px;
   }
-  .modal-table thead th {
+  .modal-table > thead > tr > th {
     position: sticky; top: 0; z-index: 2; background: var(--brand); color: #fff;
     font-weight: 700; font-size: 11px; border-bottom: none; padding-top: 9px; padding-bottom: 9px;
   }
-  .modal-table thead th:nth-child(2) { z-index: 3; }
-  .modal-table tbody tr.total-row td { font-weight: 700; background: var(--brand-soft); }
-  .modal-table tbody tr.other-row td { color: var(--text-muted); font-style: italic; }
-  .modal-table tbody tr.seg-client-row:hover td:nth-child(2) { background: var(--brand-soft-2); }
-  .modal-table tbody tr.total-row td:nth-child(2) { background: var(--brand-soft); }
+  .modal-table > thead > tr > th:nth-child(2) { z-index: 3; background: var(--brand); }
+  .modal-table > tbody > tr.total-row > td { font-weight: 700; background: var(--brand-soft); }
+  .modal-table > tbody > tr.other-row > td { color: var(--text-muted); font-style: italic; }
+  .modal-table > tbody > tr.seg-client-row:hover > td:nth-child(2) { background: var(--brand-soft-2); }
+  .modal-table > tbody > tr.total-row > td:nth-child(2) { background: var(--brand-soft); }
   /* TOP30 모달 내부에 펼쳐지는 거래처별 제품 상세 — 가로 스크롤 되는 부모 표와 별개로 자체 스크롤 */
   .modal-table tbody tr.seg-client-detail-row td { position: static; background: var(--surface-2); box-shadow: none; }
   .modal-table .seg-client-detail { padding: 10px 8px 14px 34px; }
@@ -1719,6 +1847,53 @@
     );
   }
 
+  // 표가 오른쪽으로 길어질 때(예: 거래처 상세표) 아래쪽 스크롤바까지 손을 뻗지 않아도 되도록, 표 바로
+  // 위에 얇은 가로 스크롤바를 하나 더 두고 실제 표의 스크롤 위치와 서로 동기화합니다. 표의 실제 콘텐츠
+  // 폭(scrollWidth)에 맞춰 위쪽 바의 내부 스페이서 폭도 함께 늘어나므로, 표가 커져도 항상 정확히 맞물려
+  // 스크롤됩니다.
+  function ScrollSyncTableWrap({ className, children }) {
+    const topRef = useRef(null);
+    const bottomRef = useRef(null);
+    const spacerRef = useRef(null);
+    const syncingFromTop = useRef(false);
+    const syncingFromBottom = useRef(false);
+
+    const syncSpacerWidth = () => {
+      if (bottomRef.current && spacerRef.current) {
+        const table = bottomRef.current.querySelector("table");
+        const w = table ? table.scrollWidth : bottomRef.current.scrollWidth;
+        spacerRef.current.style.width = w + "px";
+      }
+    };
+
+    React.useEffect(() => {
+      syncSpacerWidth();
+      // 창 크기 변경이나 폰트 로딩 등으로 표 실제 폭이 바뀔 수 있어 리사이즈에도 다시 맞춥니다.
+      window.addEventListener("resize", syncSpacerWidth);
+      return () => window.removeEventListener("resize", syncSpacerWidth);
+    }, [children]);
+
+    const handleTopScroll = () => {
+      if (syncingFromBottom.current) { syncingFromBottom.current = false; return; }
+      syncingFromTop.current = true;
+      if (bottomRef.current && topRef.current) bottomRef.current.scrollLeft = topRef.current.scrollLeft;
+    };
+    const handleBottomScroll = () => {
+      if (syncingFromTop.current) { syncingFromTop.current = false; return; }
+      syncingFromBottom.current = true;
+      if (topRef.current && bottomRef.current) topRef.current.scrollLeft = bottomRef.current.scrollLeft;
+    };
+
+    return h(React.Fragment, null,
+      h("div", { className: "scroll-sync-top", ref: topRef, onScroll: handleTopScroll },
+        h("div", { className: "scroll-sync-spacer", ref: spacerRef })
+      ),
+      h("div", { className: (className || "pnl-detail-table-wrap") + " scroll-sync-bottom", ref: bottomRef, onScroll: handleBottomScroll },
+        children
+      )
+    );
+  }
+
   /* =========================================================
    * 4. KPI + PNL PANEL
    * ========================================================= */
@@ -1940,11 +2115,13 @@
   }
 
   // 클라우드/서비스 실적현황 KPI 카드용 — 2024/2025/2026년 3개년 비교 + YoY(24→25), YoY(25→26) 2개 모두 표기
-  // compact: 한 카드 폭의 절반씩 나눠 쓰는 서비스 Professional/Managed 비교처럼 좁은 공간에 배치될 때 사용
-  function SegmentKpiRow3({ label, icon, y2024, y2025, y2026, compact }) {
+  // compact: 카드 폭을 2등분해 쓸 때(현재는 사용처 없음, 재사용 대비 유지)
+  // narrow: 카드 폭을 3등분(서비스 KPI 3열 배치)해 한 칸이 더 좁아질 때 — 클라우드 KPI 카드와 동일하게
+  //         가로 1줄(5열) 배치를 유지하되, 글자 크기/간격만 압축해 겹치지 않도록 합니다.
+  function SegmentKpiRow3({ label, icon, y2024, y2025, y2026, compact, narrow }) {
     return h("div", { className: "kpi-metric" + (compact ? " kpi-metric-compact" : "") },
-      h("div", { className: "kpi-metric-head" }, h(Icon, { name: icon, size: 15 }), label),
-      h("div", { className: "kpi-cols " + (compact ? "kpi-cols-5y-compact" : "kpi-cols-5y") },
+      h("div", { className: "kpi-metric-head" }, h(Icon, { name: icon, size: narrow ? 13 : 15 }), label),
+      h("div", { className: "kpi-cols " + (compact ? "kpi-cols-5y-compact" : narrow ? "kpi-cols-5y-narrow" : "kpi-cols-5y") },
         h("div", { className: "kpi-col" }, h("span", { className: "kpi-col-label" }, "2024년"), h("span", { className: "kpi-col-value" }, fmtInt(y2024))),
         h("div", { className: "kpi-col" }, h("span", { className: "kpi-col-label" }, "2025년"), h("span", { className: "kpi-col-value" }, fmtInt(y2025))),
         h("div", { className: "kpi-col" }, h("span", { className: "kpi-col-label" }, "2026년"), h("span", { className: "kpi-col-value is-cur" }, fmtInt(y2026))),
@@ -2026,10 +2203,14 @@
     };
   }
 
-  // 거래처별(구분 kind 전체 합산) YTD 매출
-  function segClientTotals(fy, kind, n) {
+  // 거래처별 YTD 매출 — catsFilter가 주어지면(상단 토글에서 특정 구분 선택) 그 구분들만 합산하고,
+  // 없으면(= '전체') 지금까지처럼 kind 전체 구분을 합산합니다. 이 함수 하나가 "필터가 적용된 숫자"의
+  // 유일한 계산 지점이 되도록 하여, 거래처별 YoY 표의 2024~2026 YTD/YoY와 그 아래 펼쳐지는 상세표가
+  // 항상 같은 기준으로 정확히 일치하도록 보장합니다.
+  function segClientTotals(fy, kind, n, catsFilter) {
     const map = new Map();
-    segCatsFor(kind).forEach((cat) => {
+    const cats = catsFilter && catsFilter.length ? catsFilter : segCatsFor(kind);
+    cats.forEach((cat) => {
       segCategoryRows(fy, cat).forEach((r) => {
         map.set(r[0], (map.get(r[0]) || 0) + segYtd(r[2], n));
       });
@@ -2037,11 +2218,13 @@
     return map;
   }
 
-  // 거래처별 2024/2025/2026년 3개년 YTD 비교(항상 SEG_ASOF_N 기준 동일 구간) — YoY는 2025→2026 기준
-  function segClientYoY3(kind, n) {
-    const y2024 = segClientTotals("FY2024", kind, n);
-    const y2025 = segClientTotals("FY2025", kind, n);
-    const y2026 = segClientTotals("FY2026", kind, n);
+  // 거래처별 2024/2025/2026년 3개년 YTD 비교(항상 SEG_ASOF_N 기준 동일 구간) — YoY는 2025→2026 기준.
+  // catsFilter가 있으면 그 구분만 합산한 값이라, 해당 구분을 전혀 쓰지 않은 거래처는 3개년 모두 0이 되어
+  // 아래 "모두 0이면 제외" 로직에 의해 자동으로 목록에서 빠집니다(= 필터에 맞는 거래처만 남음).
+  function segClientYoY3(kind, n, catsFilter) {
+    const y2024 = segClientTotals("FY2024", kind, n, catsFilter);
+    const y2025 = segClientTotals("FY2025", kind, n, catsFilter);
+    const y2026 = segClientTotals("FY2026", kind, n, catsFilter);
     const clients = new Set([...y2024.keys(), ...y2025.keys(), ...y2026.keys()]);
     const out = [];
     clients.forEach((client) => {
@@ -2053,22 +2236,6 @@
     });
     out.sort((a, b) => b.y2026 - a.y2026 || b.y2025 - a.y2025 || b.y2024 - a.y2024);
     return out;
-  }
-
-  // 거래처별 카테고리(구분) 이용 이력 — 2024~2026년 중 한 해라도 1백만원 이상 이용한 구분 집합
-  // 클라우드 거래처별 YoY 사용현황의 [Azure]/[MS S/W] 등 필터 버튼에서 사용합니다.
-  function segClientCatPresence(kind, n) {
-    const map = new Map();
-    ["FY2024", "FY2025", "FY2026"].forEach((fy) => {
-      segCatsFor(kind).forEach((cat) => {
-        segCategoryRows(fy, cat).forEach((r) => {
-          if (segYtd(r[2], n) < 1) return;
-          if (!map.has(r[0])) map.set(r[0], new Set());
-          map.get(r[0]).add(cat);
-        });
-      });
-    });
-    return map;
   }
 
   // 클라우드/서비스 거래처별 YoY 사용현황 표 상단 필터 버튼 그룹
@@ -2274,7 +2441,8 @@
                   isOpen && h("tr", { key: c.client + "-detail", className: "seg-client-detail-row" },
                     h("td", { colSpan: 15 },
                       h("div", { className: "seg-client-detail" },
-                        h("table", { className: "seg-product-table" },
+                        h(ScrollSyncTableWrap, { className: "seg-product-table-flat-wrap" },
+                        h("table", { className: "seg-product-table seg-product-table--flat" },
                           h("thead", null, h("tr", null,
                             h("th", null, "제품명"),
                             ...MONTHS.map((mo) => h("th", { key: mo }, mo)),
@@ -2285,6 +2453,7 @@
                             ...p.m.map((v, mi) => h("td", { key: mi }, mi < n ? fmtInt(v) : "–")),
                             h("td", null, fmtInt(p.ytd))
                           )))
+                        )
                         )
                       )
                     )
@@ -2320,18 +2489,64 @@
     const detail = useMemo(() => segClientDetail(fy, kind, client, n, catsFilter), [fy, kind, client, n, catsFilter]);
     const goPrevYear = (e) => { e.stopPropagation(); if (yearIdx > 0) setFy(SEG_YEAR_ORDER[yearIdx - 1]); };
     const goNextYear = (e) => { e.stopPropagation(); if (yearIdx < SEG_YEAR_ORDER.length - 1) setFy(SEG_YEAR_ORDER[yearIdx + 1]); };
+
+    // 연도 선택(년도 전환)/타이틀/가로 스크롤바를 표 헤더 위에 차례로 틀고정(sticky)합니다. 세 블록의
+    // 실제 렌더링 높이를 측정해 다음 블록의 top 오프셋으로 이어붙이므로, 거래처명 길이 등으로 타이틀이
+    // 줄바꿈되어도 항상 정확히 이어져 겹치지 않습니다.
+    const yearSwitchRef = useRef(null);
+    const titleRef = useRef(null);
+    const scrollBarRef = useRef(null);
+    const tableScrollRef = useRef(null);
+    const spacerRef = useRef(null);
+    const syncingFromBar = useRef(false);
+    const syncingFromTable = useRef(false);
+    const [offsets, setOffsets] = useState({ h1: 0, h2: 0, h3: 0 });
+
+    React.useEffect(() => {
+      const h1 = yearSwitchRef.current ? yearSwitchRef.current.offsetHeight : 0;
+      const h2 = titleRef.current ? titleRef.current.offsetHeight : 0;
+      const h3 = scrollBarRef.current ? scrollBarRef.current.offsetHeight : 0;
+      setOffsets((prev) => (prev.h1 === h1 && prev.h2 === h2 && prev.h3 === h3 ? prev : { h1, h2, h3 }));
+    });
+
+    React.useEffect(() => {
+      if (tableScrollRef.current && spacerRef.current) {
+        const table = tableScrollRef.current.querySelector(".seg-product-table--detail");
+        const w = table ? table.scrollWidth : 0;
+        spacerRef.current.style.width = w + "px";
+      }
+    }, [detail]);
+
+    const handleBarScroll = () => {
+      if (syncingFromTable.current) { syncingFromTable.current = false; return; }
+      syncingFromBar.current = true;
+      if (tableScrollRef.current && scrollBarRef.current) tableScrollRef.current.scrollLeft = scrollBarRef.current.scrollLeft;
+    };
+    const handleTableScroll = () => {
+      if (syncingFromBar.current) { syncingFromBar.current = false; return; }
+      syncingFromTable.current = true;
+      if (scrollBarRef.current && tableScrollRef.current) scrollBarRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+    };
+
     return h("div", { className: "seg-client-detail" },
-      h("div", { className: "seg-year-switch" },
-        h("button", { type: "button", className: "seg-year-switch-btn", disabled: yearIdx === 0, onClick: goPrevYear, "aria-label": "이전 연도" }, "‹"),
-        h("span", { className: "seg-year-switch-label" }, PNL_YEAR_META[fy].label.replace("FY", "") + "년"),
-        h("button", { type: "button", className: "seg-year-switch-btn", disabled: yearIdx === SEG_YEAR_ORDER.length - 1, onClick: goNextYear, "aria-label": "다음 연도" }, "›"),
-        filterLabel && h("span", { className: "seg-year-switch-filter-badge" }, filterLabel + " 필터 적용 중")
-      ),
       h("div", { className: "seg-client-detail-cols" },
         h("div", null,
-          h("div", { className: "seg-client-detail-title" }, client + " 이용 제품/서비스 (" + detail.items.length + "건 · " + PNL_YEAR_META[fy].label + " YTD 합계 " + fmtInt(detail.grandYtd) + " 백만원)"),
-          h("div", { className: "pnl-detail-table-wrap" },
-            h("table", { className: "seg-product-table" },
+          h("div", { className: "seg-detail-scroll", ref: tableScrollRef, onScroll: handleTableScroll },
+            h("div", { className: "seg-detail-sticky seg-detail-sticky-yearswitch", ref: yearSwitchRef, style: { top: 0 } },
+              h("div", { className: "seg-year-switch" },
+                h("button", { type: "button", className: "seg-year-switch-btn", disabled: yearIdx === 0, onClick: goPrevYear, "aria-label": "이전 연도" }, "‹"),
+                h("span", { className: "seg-year-switch-label" }, PNL_YEAR_META[fy].label.replace("FY", "") + "년"),
+                h("button", { type: "button", className: "seg-year-switch-btn", disabled: yearIdx === SEG_YEAR_ORDER.length - 1, onClick: goNextYear, "aria-label": "다음 연도" }, "›"),
+                filterLabel && h("span", { className: "seg-year-switch-filter-badge" }, filterLabel + " 필터 적용 중")
+              )
+            ),
+            h("div", { className: "seg-detail-sticky seg-detail-sticky-title", ref: titleRef, style: { top: offsets.h1 + "px" } },
+              h("div", { className: "seg-client-detail-title" }, client + " 이용 제품/서비스 (" + detail.items.length + "건 · " + PNL_YEAR_META[fy].label + " YTD 합계 " + fmtInt(detail.grandYtd) + " 백만원)")
+            ),
+            h("div", { className: "seg-detail-sticky seg-detail-sticky-scrollbar", ref: scrollBarRef, onScroll: handleBarScroll, style: { top: (offsets.h1 + offsets.h2) + "px" } },
+              h("div", { className: "scroll-sync-spacer", ref: spacerRef })
+            ),
+            h("table", { className: "seg-product-table seg-product-table--detail", style: { "--seg-thead-top": (offsets.h1 + offsets.h2 + offsets.h3) + "px" } },
               h("thead", null, h("tr", null,
                 h("th", null, "구분"), h("th", null, "제품명"),
                 ...MONTHS.map((mo) => h("th", { key: mo }, mo)),
@@ -2369,9 +2584,12 @@
     const [filterKey, setFilterKey] = useState("all");
 
     const groups = SEG_FILTER_GROUPS[kind];
-    const rows = useMemo(() => segClientYoY3(kind, n), [kind, n]);
-    const presence = useMemo(() => segClientCatPresence(kind, n), [kind, n]);
     const activeGroup = groups.find((g) => g.key === filterKey) || groups[0];
+    // rows 자체를 activeGroup.cats 기준으로 다시 집계합니다(전체 구분 합산이 아니라 선택된 구분만).
+    // 이렇게 하면 다른 구분만 쓰는 거래처는 3개년 합계가 전부 0이 되어 segClientYoY3 내부에서 자동으로
+    // 걸러지므로, 별도의 "이 거래처가 이 구분을 쓴 적 있는지" 존재 여부 필터가 더 이상 필요 없고,
+    // 목록에 보이는 2024/2025/2026 YTD·YoY 수치 자체도 항상 선택된 구분 기준으로만 계산됩니다.
+    const rows = useMemo(() => segClientYoY3(kind, n, activeGroup.cats), [kind, n, activeGroup]);
 
     // 검색창에 거래처명을 입력하면 구분 필터를 자동으로 '전체'로 되돌려 검색 결과 전체를 먼저 보여주고,
     // 이후 토글 버튼을 클릭해야만 해당 구분값으로 즉시 필터링됩니다(검색과 필터가 서로를 가리지 않도록).
@@ -2381,17 +2599,10 @@
     };
 
     const filtered = useMemo(() => {
-      let list = rows;
-      if (activeGroup.cats) {
-        list = list.filter((r) => {
-          const cats = presence.get(r.client);
-          return cats && activeGroup.cats.some((c) => cats.has(c));
-        });
-      }
       const q = query.trim().toLowerCase();
-      if (q) list = list.filter((r) => r.client.toLowerCase().includes(q));
-      return list;
-    }, [rows, presence, activeGroup, query]);
+      if (!q) return rows;
+      return rows.filter((r) => r.client.toLowerCase().includes(q));
+    }, [rows, query]);
 
     return h("div", { className: "card" },
       h("div", { className: "card-title" }, h(Icon, { name: "users", size: 15 }), (kind === "cloud" ? "클라우드" : "서비스") + " 거래처별 YoY 사용현황"),
@@ -2474,7 +2685,7 @@
     const seg26 = buildSegmentRows("FY2026", cloudItems, "클라우드");
 
     return h("div", { className: "view-stack" },
-      h("div", { className: "kpi-row" },
+      h("div", { className: "kpi-row kpi-row-single" },
         h("div", { className: "card kpi-card-lg" },
           h("div", { className: "card-title" }, "클라우드 누적 실적 3개년 비교 (YTD)"),
           h("div", { className: "card-sub" }, "1~" + SEG_ASOF_N + "월 누적(2026년 실적 확정월 기준 동일 구간) · 단위 백만원"),
@@ -2515,16 +2726,14 @@
     const mgdRev26 = cum(PNL_DATA.FY2026.revItems["Managed Service"], SEG_ASOF_N);
 
     return h("div", { className: "view-stack" },
-      h("div", { className: "kpi-row" },
+      h("div", { className: "kpi-row kpi-row-single" },
         h("div", { className: "card kpi-card-lg" },
           h("div", { className: "card-title" }, "서비스 누적 실적 3개년 비교 (YTD)"),
           h("div", { className: "card-sub" }, "1~" + SEG_ASOF_N + "월 누적(2026년 실적 확정월 기준 동일 구간) · 단위 백만원"),
-          h("div", { className: "kpi-metrics kpi-metrics-1" },
-            h(SegmentKpiRow3, { label: "서비스 누적 매출", icon: "wallet", y2024: cum(seg24.segRev, SEG_ASOF_N), y2025: cum(seg25.segRev, SEG_ASOF_N), y2026: cum(seg26.segRev, SEG_ASOF_N) })
-          ),
-          h("div", { className: "kpi-metrics kpi-metrics-sub" },
-            h(SegmentKpiRow3, { label: "Professional Service 매출", icon: "clipboardList", y2024: proRev24, y2025: proRev25, y2026: proRev26, compact: true }),
-            h(SegmentKpiRow3, { label: "Managed Service 매출", icon: "headset", y2024: mgdRev24, y2025: mgdRev25, y2026: mgdRev26, compact: true })
+          h("div", { className: "kpi-3col-container" },
+            h("div", { className: "kpi-3col-item" }, h(SegmentKpiRow3, { label: "서비스 누적 매출", icon: "wallet", y2024: cum(seg24.segRev, SEG_ASOF_N), y2025: cum(seg25.segRev, SEG_ASOF_N), y2026: cum(seg26.segRev, SEG_ASOF_N), narrow: true })),
+            h("div", { className: "kpi-3col-item" }, h(SegmentKpiRow3, { label: "Professional Service 매출", icon: "clipboardList", y2024: proRev24, y2025: proRev25, y2026: proRev26, narrow: true })),
+            h("div", { className: "kpi-3col-item" }, h(SegmentKpiRow3, { label: "Managed Service 매출", icon: "headset", y2024: mgdRev24, y2025: mgdRev25, y2026: mgdRev26, narrow: true }))
           )
         )
       ),
