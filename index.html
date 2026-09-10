@@ -2411,7 +2411,7 @@
         h("div", { className: "modal-head" },
           h("div", null,
             h("div", { className: "modal-head-title" }, h(Icon, { name: kind === "cloud" ? "package" : "headset", size: 16 }), cat + " · 거래처 TOP 30"),
-            h("div", { className: "modal-head-sub" }, meta.label + " 1~" + n + "월 누적(YTD) · 단위 백만원 · 거래처 누적매출 기준 상위 30개 거래처, 1백만원 미만 소액 거래처는 '기타'로 합산 · 거래처명을 클릭하면 제품별 내역이 펼쳐집니다")
+            h("div", { className: "modal-head-sub" }, meta.label + " 1~" + n + "월 " + (n >= 12 ? "연간 전체 실적(1~12월 모두 포함)" : "누적(YTD, 3개년 동일 구간 비교와는 다른 값)") + " · 단위 백만원 · 거래처 누적매출 기준 상위 30개 거래처, 1백만원 미만 소액 거래처는 '기타'로 합산 · 거래처명을 클릭하면 제품별 내역이 펼쳐집니다")
           ),
           h("div", { className: "modal-head-actions" },
             h("button", { type: "button", className: "pnl-action-btn", onClick: () => exportSegmentTop30Excel(fy, kind, cat, n) }, h(Icon, { name: "download", size: 14 }), "엑셀 다운로드"),
@@ -2575,6 +2575,26 @@
     );
   }
 
+  // 거래처 행 하나 — React.memo로 감싸 "이 행의 r/isOpen이 실제로 바뀐 경우"에만 다시 그리도록 합니다.
+  // filtered 배열 자체는 검색어/필터가 바뀔 때만 새로 만들어지고, 거래처를 펼치고/접는 setExpanded 호출
+  // 로는 참조가 바뀌지 않으므로(useMemo 의존성에 expanded가 없음), 2,285개 행 중 실제로 열림 상태가
+  // 바뀐 1~2개 행만 리렌더링되고 나머지는 React.memo의 얕은 비교에서 그대로 스킵됩니다 — 거래처 수가
+  // 아무리 많아져도 클릭 반응 속도가 전체 행 수에 비례해 느려지지 않습니다. 행에는 onClick을 개별로
+  // 걸지 않고 data-client만 표시해 두고, 아래 tbody 하나에서 클릭을 위임 처리합니다(이벤트 위임).
+  const SegClientRow = React.memo(function SegClientRow({ r, isOpen }) {
+    return h("tr", { className: "seg-client-row", "data-client": r.client },
+      h("td", null, h("span", { className: "seg-client-row-name" },
+        h("span", { className: "seg-client-chevron" + (isOpen ? " open" : "") }, h(Icon, { name: "chevronRight", size: 12 })),
+        r.client
+      )),
+      h("td", null, fmtInt(r.y2024)),
+      h("td", null, fmtInt(r.y2025)),
+      h("td", null, fmtInt(r.y2026)),
+      h("td", null, segYoyChip(r.y2025, r.y2024)),
+      h("td", null, segYoyChip(r.y2026, r.y2025))
+    );
+  });
+
   // 거래처별 YoY 사용현황 — 2024/2025/2026년 3개년 YTD를 항상 SEG_ASOF_N(2026년 실적 확정월) 기준
   // 동일 구간으로 비교합니다. 구분(Azure/MS S/W 등) 필터 버튼과 거래처명 검색을 함께 제공합니다.
   function SegmentClientYoyTable({ kind }) {
@@ -2604,9 +2624,28 @@
       return rows.filter((r) => r.client.toLowerCase().includes(q));
     }, [rows, query]);
 
+    // filtered를 거래처명 → row로 즉시 조회할 수 있는 Map을 만들어 둡니다(O(1) 조회). 클릭 시마다
+    // filtered.find(...)로 배열 전체를 훑는 대신, 아래 handleTbodyClick에서 이 Map으로 바로 찾습니다.
+    const rowByClient = useMemo(() => {
+      const map = new Map();
+      filtered.forEach((r) => map.set(r.client, r));
+      return map;
+    }, [filtered]);
+
+    // tbody 하나에 걸어두는 위임 클릭 핸들러 — 행마다 onClick을 새로 만들지 않고, 클릭된 지점에서
+    // 가장 가까운 data-client 표시 행(tr)을 찾아 그 거래처만 펼치거나 접습니다. 펼쳐진 상세 패널
+    // (ClientDetailPanel) 내부의 연도 전환 버튼 등을 클릭해도 그 영역엔 data-client가 없어 안전합니다.
+    const handleTbodyClick = (e) => {
+      const rowEl = e.target.closest("tr[data-client]");
+      if (!rowEl) return;
+      const client = rowEl.getAttribute("data-client");
+      if (!rowByClient.has(client)) return;
+      setExpanded((prev) => (prev === client ? null : client));
+    };
+
     return h("div", { className: "card" },
       h("div", { className: "card-title" }, h(Icon, { name: "users", size: 15 }), (kind === "cloud" ? "클라우드" : "서비스") + " 거래처별 YoY 사용현황"),
-      h("div", { className: "card-sub" }, "2024년 · 2025년 · 2026년 1~" + n + "월 누적(YTD) 3개년 비교 · 단위 백만원 · YoY는 24→25년, 25→26년 기준 · 거래처명을 클릭하면 이용 중인 제품/서비스와 월별 추이가 표시됩니다"),
+      h("div", { className: "card-sub" }, "2024년 · 2025년 · 2026년을 모두 1~" + n + "월(2026년 실적 확정월) 동일 구간으로 맞춰 비교한 값입니다 — 완료된 연도의 연간(1~12월) 전체 실적과는 다릅니다 · 단위 백만원 · YoY는 24→25년, 25→26년 기준 · 거래처명을 클릭하면 이용 중인 제품/서비스와 월별 추이가 표시됩니다"),
       h("div", { className: "seg-filter-row", style: { marginTop: "10px" } },
         groups.map((g) => h("button", {
           type: "button", key: g.key,
@@ -2631,23 +2670,16 @@
             h("th", null, "YoY(24→25)"),
             h("th", null, "YoY(25→26)")
           )),
-          h("tbody", null,
+          h("tbody", { onClick: handleTbodyClick },
             filtered.length === 0
               ? h("tr", null, h("td", { colSpan: 6, className: "empty-state" }, "검색 결과가 없습니다"))
               : filtered.map((r) => {
                   const isOpen = expanded === r.client;
                   return [
-                    h("tr", { key: r.client, className: "seg-client-row", onClick: () => setExpanded(isOpen ? null : r.client) },
-                      h("td", null, h("span", { className: "seg-client-row-name" },
-                        h("span", { className: "seg-client-chevron" + (isOpen ? " open" : "") }, h(Icon, { name: "chevronRight", size: 12 })),
-                        r.client
-                      )),
-                      h("td", null, fmtInt(r.y2024)),
-                      h("td", null, fmtInt(r.y2025)),
-                      h("td", null, fmtInt(r.y2026)),
-                      h("td", null, segYoyChip(r.y2025, r.y2024)),
-                      h("td", null, segYoyChip(r.y2026, r.y2025))
-                    ),
+                    h(SegClientRow, { key: r.client, r, isOpen }),
+                    // 지연 생성(lazy): 펼쳐진 거래처 단 하나에 대해서만 ClientDetailPanel(및 그 안의
+                    // segClientDetail 계산·상세 표 DOM)이 실제로 만들어집니다. 나머지 2,000여 개
+                    // 거래처는 접힌 요약 행만 존재하고 상세 DOM은 애초에 렌더링되지 않습니다.
                     isOpen && h("tr", { key: r.client + "-detail", className: "seg-client-detail-row" },
                       h("td", { colSpan: 6 }, h(ClientDetailPanel, {
                         kind, client: r.client, defaultFy: "FY2026",
